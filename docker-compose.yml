@@ -1,5 +1,5 @@
 services:
-  # Attack scenario (vulnerable)
+  # Tấn công
   vuln-victim:
     build:
       context: .
@@ -15,7 +15,7 @@ services:
     privileged: true
     sysctls:
       - net.ipv4.icmp_echo_ignore_broadcasts=0
-      - net.ipv4.conf.all.rp_filter=0  # Changed to 0 to make it vulnerable
+      - net.ipv4.conf.all.rp_filter=0
       - net.ipv4.conf.eth0.rp_filter=0
 
   vuln-amplifier:
@@ -33,7 +33,7 @@ services:
     sysctls:
       - net.ipv4.ip_forward=1
       - net.ipv4.icmp_echo_ignore_broadcasts=0
-      - net.ipv4.conf.all.rp_filter=0  # Changed to 0 to make it vulnerable
+      - net.ipv4.conf.all.rp_filter=0
       - net.ipv4.conf.eth0.rp_filter=0
     privileged: true
 
@@ -52,7 +52,7 @@ services:
     volumes:
       - ./attack_scripts:/attack_scripts
 
-  # Defense scenario (protected)
+  # Phòng thủ
   prot-victim:
     build:
       context: .
@@ -70,14 +70,12 @@ services:
       - net.ipv4.icmp_echo_ignore_broadcasts=1
       - net.ipv4.conf.all.rp_filter=1
       - net.ipv4.conf.eth0.rp_filter=1
-    # Added entrypoint script
     command: >
       bash -c "
-        echo 'Configuring victim protection against Smurf attacks...'
-        # Block all ICMP echo replies (these are what flood the victim in Smurf)
+        echo 'Cấu hình cho máy nạn nhân phòng chống smurf'
+        # Chặn tất cả gói tin ICMP reply
         iptables -A INPUT -p icmp --icmp-type echo-reply -j DROP
-        # Log for demonstration
-        echo 'Victim protection configured!'
+        echo 'Cấu hình cho máy nạn nhân thành công!'
         /bin/bash
       "
 
@@ -99,14 +97,12 @@ services:
       - net.ipv4.conf.all.rp_filter=1
       - net.ipv4.conf.eth0.rp_filter=1
     privileged: true
-    # Added entrypoint script
     command: >
       bash -c "
-        echo 'Configuring amplifier protection against Smurf attacks...'
-        # Block forwarding to broadcast addresses
+        echo 'Cấu hình cho máy khuếch đại phòng chống smurf'
+        # Chặn chuyển tiếp đến địa chỉ quảng bá
         iptables -A FORWARD -d 172.21.255.255 -j DROP
-        # Log for demonstration
-        echo 'Amplifier protection configured!'
+        echo 'Cấu hình cho máy khuếch đại thành công'
         /bin/bash
       "
 

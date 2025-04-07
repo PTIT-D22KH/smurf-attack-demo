@@ -10,11 +10,11 @@ docker-compose up
 ## Demo tấn công:
 ### Terminal 1 - Nạn nhân
 ```bash
-docker exec -it vuln-victim tcpdump -i eth0 icmp
+docker exec -it vuln-victim tcpdump -n -i eth0 icmp
 ```
 ###  Terminal 2 - Khuếch đại
 ```bash
-docker exec -it vuln-amplifier tcpdump -i eth0 icmp
+docker exec -it vuln-amplifier tcpdump -n -i eth0 icmp
 ```
 
 ### Terminal 3 - Tấn công
@@ -32,11 +32,11 @@ docker exec -it vuln-attacker bash -c "cd /attack_scripts && python3 smurf_attac
 ## Demo phòng thủ:
 ### Terminal nạn nhân
 ```bash
-docker exec -it prot-victim tcpdump -i eth0 icmp
+docker exec -it prot-victim tcpdump -n -i eth0 icmp
 ```
 ### Terminal khuếch đại
 ```bash
-docker exec -it prot-amplifier tcpdump -i eth0 icmp
+docker exec -it prot-amplifier tcpdump -n -i eth0 icmp
 ```
 ### Terminal kẻ tấn công
 ```bash

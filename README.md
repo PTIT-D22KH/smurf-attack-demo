@@ -46,5 +46,5 @@ python3 smurf_attack.py 172.21.0.2 172.21.255.255
 ```
 hoặc
 ```bash
-docker exec -it prot-attacker bash -c "cd /attack_scripts && python3 smurf_attack.py 172.20.0.2 172.20.255.255"
+docker exec -it prot-attacker bash -c "cd /attack_scripts && python3 smurf_attack.py 172.21.0.2 172.21.255.255"
 ```

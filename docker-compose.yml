@@ -15,7 +15,7 @@ services:
     privileged: true
     sysctls:
       - net.ipv4.icmp_echo_ignore_broadcasts=0
-      - net.ipv4.conf.all.rp_filter=1
+      - net.ipv4.conf.all.rp_filter=0  # Changed to 0 to make it vulnerable
       - net.ipv4.conf.eth0.rp_filter=0
 
   vuln-amplifier:
@@ -33,7 +33,7 @@ services:
     sysctls:
       - net.ipv4.ip_forward=1
       - net.ipv4.icmp_echo_ignore_broadcasts=0
-      - net.ipv4.conf.all.rp_filter=1
+      - net.ipv4.conf.all.rp_filter=0  # Changed to 0 to make it vulnerable
       - net.ipv4.conf.eth0.rp_filter=0
     privileged: true
 
@@ -70,6 +70,16 @@ services:
       - net.ipv4.icmp_echo_ignore_broadcasts=1
       - net.ipv4.conf.all.rp_filter=1
       - net.ipv4.conf.eth0.rp_filter=1
+    # Added entrypoint script
+    command: >
+      bash -c "
+        echo 'Configuring victim protection against Smurf attacks...'
+        # Block all ICMP echo replies (these are what flood the victim in Smurf)
+        iptables -A INPUT -p icmp --icmp-type echo-reply -j DROP
+        # Log for demonstration
+        echo 'Victim protection configured!'
+        /bin/bash
+      "
 
   prot-amplifier:
     build:
@@ -85,10 +95,20 @@ services:
     tty: true
     sysctls:
       - net.ipv4.ip_forward=1
-      - net.ipv4.icmp_echo_ignore_broadcasts=1 
+      - net.ipv4.icmp_echo_ignore_broadcasts=1
       - net.ipv4.conf.all.rp_filter=1
       - net.ipv4.conf.eth0.rp_filter=1
     privileged: true
+    # Added entrypoint script
+    command: >
+      bash -c "
+        echo 'Configuring amplifier protection against Smurf attacks...'
+        # Block forwarding to broadcast addresses
+        iptables -A FORWARD -d 172.21.255.255 -j DROP
+        # Log for demonstration
+        echo 'Amplifier protection configured!'
+        /bin/bash
+      "
 
   prot-attacker:
     build:

@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  ubuntu-victim:
+    image: ubuntu:20.04
+    container_name: ubuntu-victim
+    networks:
+      attack_network:
+        ipv4_address: 172.20.0.2
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    command: bash -c "apt-get update && apt-get install -y iproute2 iputils-ping net-tools tcpdump && /bin/bash"
+
+  ubuntu-amplifier:
+    image: ubuntu:20.04
+    container_name: ubuntu-amplifier
+    networks:
+      attack_network:
+        ipv4_address: 172.20.0.3
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.icmp_echo_ignore_broadcasts=0
+    command: bash -c "apt-get update && apt-get install -y iproute2 iputils-ping net-tools tcpdump && /bin/bash"
+
+  kali-attacker:
+    image: kalilinux/kali-rolling
+    container_name: kali-attacker
+    networks:
+      attack_network:
+        ipv4_address: 172.20.0.4
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./attack_scripts:/attack_scripts
+    command: bash -c "apt-get update && apt-get install -y python3-scapy net-tools iputils-ping tcpdump && /bin/bash"
+
+networks:
+  attack_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

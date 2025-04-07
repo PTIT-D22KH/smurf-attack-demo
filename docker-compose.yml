@@ -1,8 +1,10 @@
-
 services:
-  ubuntu-victim:
-    image: ubuntu:20.04
-    container_name: ubuntu-victim
+  # Attack scenario (vulnerable)
+  vuln-victim:
+    build:
+      context: .
+      dockerfile: dockerfiles/ubuntu-victim.Dockerfile
+    container_name: vuln-victim
     networks:
       attack_network:
         ipv4_address: 172.20.0.2
@@ -10,11 +12,16 @@ services:
       - NET_ADMIN
     stdin_open: true
     tty: true
-    command: bash -c "apt-get update && apt-get install -y iproute2 iputils-ping net-tools tcpdump && /bin/bash"
+    privileged: true
+    sysctls:
+      - net.ipv4.icmp_echo_ignore_broadcasts=1
+      - net.ipv4.conf.all.rp_filter=1
 
-  ubuntu-amplifier:
-    image: ubuntu:20.04
-    container_name: ubuntu-amplifier
+  vuln-amplifier:
+    build:
+      context: .
+      dockerfile: dockerfiles/ubuntu-amplifier.Dockerfile
+    container_name: vuln-amplifier
     networks:
       attack_network:
         ipv4_address: 172.20.0.3
@@ -24,12 +31,15 @@ services:
     tty: true
     sysctls:
       - net.ipv4.ip_forward=1
-      - net.ipv4.icmp_echo_ignore_broadcasts=0
-    command: bash -c "apt-get update && apt-get install -y iproute2 iputils-ping net-tools tcpdump && /bin/bash"
+      - net.ipv4.icmp_echo_ignore_broadcasts=0  # Vulnerable to Smurf
+      - net.ipv4.conf.all.rp_filter=1
+    privileged: true
 
-  kali-attacker:
-    image: kalilinux/kali-rolling
-    container_name: kali-attacker
+  vuln-attacker:
+    build:
+      context: .
+      dockerfile: dockerfiles/kali-attacker.Dockerfile
+    container_name: vuln-attacker
     networks:
       attack_network:
         ipv4_address: 172.20.0.4
@@ -39,7 +49,57 @@ services:
     tty: true
     volumes:
       - ./attack_scripts:/attack_scripts
-    command: bash -c "apt-get update && apt-get install -y python3-scapy net-tools iputils-ping tcpdump && /bin/bash"
+
+  # Defense scenario (protected)
+  prot-victim:
+    build:
+      context: .
+      dockerfile: dockerfiles/ubuntu-victim.Dockerfile
+    container_name: prot-victim
+    networks:
+      defense_network:
+        ipv4_address: 172.21.0.2
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    privileged: true
+    sysctls:
+      - net.ipv4.icmp_echo_ignore_broadcasts=1
+      - net.ipv4.conf.all.rp_filter=1
+
+  prot-amplifier:
+    build:
+      context: .
+      dockerfile: dockerfiles/ubuntu-amplifier.Dockerfile
+    container_name: prot-amplifier
+    networks:
+      defense_network:
+        ipv4_address: 172.21.0.3
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.icmp_echo_ignore_broadcasts=1  # Protected from Smurf
+      - net.ipv4.conf.all.rp_filter=1
+    privileged: true
+
+  prot-attacker:
+    build:
+      context: .
+      dockerfile: dockerfiles/kali-attacker.Dockerfile
+    container_name: prot-attacker
+    networks:
+      defense_network:
+        ipv4_address: 172.21.0.4
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./attack_scripts:/attack_scripts
 
 networks:
   attack_network:
@@ -47,3 +107,8 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
+  defense_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

@@ -73,6 +73,9 @@ services:
     command: >
       bash -c "
         echo 'Cấu hình cho máy nạn nhân phòng chống smurf'
+        # Chặn các gói tin giả mạo từ chính mạng
+        iptables -A INPUT -i eth0 -s 172.21.0.2 -j DROP
+        iptables -A INPUT -i eth0 -s 172.21.0.3 -j DROP
         # Chặn tất cả gói tin ICMP reply
         iptables -A INPUT -p icmp --icmp-type echo-reply -j DROP
         echo 'Cấu hình cho máy nạn nhân thành công!'
@@ -100,6 +103,9 @@ services:
     command: >
       bash -c "
         echo 'Cấu hình cho máy khuếch đại phòng chống smurf'
+        # Chặn các gói tin giả mạo từ chính mạng
+        iptables -A INPUT -i eth0 -s 172.21.0.2 -j DROP
+        iptables -A INPUT -i eth0 -s 172.21.0.3 -j DROP
         # Chặn chuyển tiếp đến địa chỉ quảng bá
         iptables -A FORWARD -d 172.21.255.255 -j DROP
         echo 'Cấu hình cho máy khuếch đại thành công'
